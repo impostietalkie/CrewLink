@@ -82,247 +82,272 @@ export default class GameReader {
 		return;
 	}
 
+	readStateFromMemory() {
+		if (
+			!this.PlayerStruct ||
+			!this.offsets ||
+			this.amongUs === null ||
+			this.gameAssembly === null
+		) {
+			return;
+		}
+
+		let state = GameState.UNKNOWN;
+		const meetingHud = this.readMemory<number>(
+			'pointer',
+			this.gameAssembly.modBaseAddr,
+			this.offsets.meetingHud
+		);
+		const meetingHud_cachePtr =
+			meetingHud === 0
+				? 0
+				: this.readMemory<number>(
+						'pointer',
+						meetingHud,
+						this.offsets.meetingHudCachePtr
+					);
+		const meetingHudState =
+			meetingHud_cachePtr === 0
+				? 4
+				: this.readMemory('int', meetingHud, this.offsets.meetingHudState, 4);
+		const gameState = this.readMemory<number>(
+			'int',
+			this.gameAssembly.modBaseAddr,
+			this.offsets.gameState
+		);
+
+		switch (gameState) {
+			case 0:
+				state = GameState.MENU;
+				this.exileCausesEnd = false;
+				break;
+			case 1:
+			case 3:
+				state = GameState.LOBBY;
+				this.exileCausesEnd = false;
+				break;
+			default:
+				if (this.exileCausesEnd) state = GameState.LOBBY;
+				else if (meetingHudState < 4) state = GameState.DISCUSSION;
+				else state = GameState.TASKS;
+				break;
+		}
+
+		this.gameCode =
+			state === GameState.MENU
+				? ''
+				: this.IntToGameCode(
+						this.readMemory<number>(
+							'int32',
+							this.gameAssembly.modBaseAddr,
+							this.offsets.gameCode
+						)
+					);
+
+		const hostId = this.readMemory<number>(
+			'uint32',
+			this.gameAssembly.modBaseAddr,
+			this.offsets.hostId
+		);
+		const clientId = this.readMemory<number>(
+			'uint32',
+			this.gameAssembly.modBaseAddr,
+			this.offsets.clientId
+		);
+
+		const allPlayersPtr = this.readMemory<number>(
+			'ptr',
+			this.gameAssembly.modBaseAddr,
+			this.offsets.allPlayersPtr
+		);
+		const allPlayers = this.readMemory<number>(
+			'ptr',
+			allPlayersPtr,
+			this.offsets.allPlayers
+		);
+		const playerCount = this.readMemory<number>(
+			'int' as const,
+			allPlayersPtr,
+			this.offsets.playerCount
+		);
+		let playerAddrPtr = allPlayers + this.offsets.playerAddrPtr;
+		const players = [];
+
+		const exiledPlayerId = this.readMemory<number>(
+			'byte',
+			this.gameAssembly.modBaseAddr,
+			this.offsets.exiledPlayerId
+		);
+		let impostors = 0,
+			crewmates = 0;
+
+		let commsSabotaged = false;
+
+		if (this.gameCode) {
+			for (let i = 0; i < Math.min(playerCount, 100); i++) {
+				const { address, last } = this.offsetAddress(
+					playerAddrPtr,
+					this.offsets.player.offsets
+				);
+				const playerData = readBuffer(
+					this.amongUs.handle,
+					address + last,
+					this.offsets.player.bufferLength
+				);
+
+				const player = this.parsePlayer(address + last, playerData, clientId);
+				playerAddrPtr += this.is64Bit ? 8 : 4;
+				if (!player) continue;
+				players.push(player);
+
+				if (
+					player.name === '' ||
+					player.id === exiledPlayerId ||
+					player.isDead ||
+					player.disconnected
+				)
+					continue;
+
+				if (player.isImpostor) impostors++;
+				else crewmates++;
+			}
+
+			const shipPtr = this.readMemory<number>(
+				'ptr',
+				this.gameAssembly.modBaseAddr,
+				this.offsets.shipStatus
+			);
+
+			const systemsPtr = this.readMemory<number>(
+				'ptr',
+				shipPtr,
+				this.offsets.shipStatusSystems
+			);
+			const map: MapType = this.readMemory<number>(
+				'int32',
+				shipPtr,
+				this.offsets.shipStatusMap,
+				MapType.UNKNOWN
+			);
+
+			if (
+				systemsPtr !== 0 &&
+				(state === GameState.TASKS || state === GameState.DISCUSSION)
+			) {
+				const entries = this.readMemory<number>(
+					'ptr',
+					systemsPtr + (this.is64Bit ? 0x18 : 0xc)
+				);
+				const len = this.readMemory<number>(
+					'uint32',
+					entries + (this.is64Bit ? 0x18 : 0xc)
+				);
+
+				for (let i = 0; i < Math.min(len, 32); i++) {
+					const keyPtr =
+						entries +
+						((this.is64Bit ? 0x20 : 0x10) + i * (this.is64Bit ? 0x18 : 0x10));
+					const valPtr = keyPtr + (this.is64Bit ? 0x10 : 0xc);
+					const key = this.readMemory<number>('int32', keyPtr);
+					if (key === 14) {
+						const value = this.readMemory<number>('ptr', valPtr);
+						switch (map) {
+							case MapType.POLUS:
+							case MapType.THE_SKELD: {
+								commsSabotaged =
+									this.readMemory<number>(
+										'uint32',
+										value,
+										this.offsets.commsSabotaged
+									) === 1;
+								break;
+							}
+							case MapType.MIRA_HQ: {
+								commsSabotaged =
+									this.readMemory<number>(
+										'uint32',
+										value,
+										this.offsets.miraCompletedCommsConsoles
+									) < 2;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if (
+			this.oldGameState === GameState.DISCUSSION &&
+			state === GameState.TASKS
+		) {
+			if (impostors === 0 || impostors >= crewmates) {
+				this.exileCausesEnd = true;
+				state = GameState.LOBBY;
+			}
+		}
+		if (
+			this.oldGameState === GameState.MENU &&
+			state === GameState.LOBBY &&
+			this.menuUpdateTimer > 0 &&
+			(this.lastPlayerPtr === allPlayers ||
+				players.length === 1 ||
+				!players.find((p) => p.isLocal))
+		) {
+			state = GameState.MENU;
+			this.menuUpdateTimer--;
+		} else {
+			this.menuUpdateTimer = 20;
+		}
+		this.lastPlayerPtr = allPlayers;
+
+		const newState: AmongUsState = {
+			lobbyCode: this.gameCode || 'MENU',
+			players,
+			gameState: state,
+			oldGameState: this.oldGameState,
+			isHost: (hostId && clientId && hostId === clientId) as boolean,
+			hostId: hostId,
+			clientId: clientId,
+			commsSabotaged,
+		};
+		const stateHasChanged = !equal(this.lastState, newState);
+		if (stateHasChanged) {
+			try {
+				this.sendIPC(IpcRendererMessages.NOTIFY_GAME_STATE_CHANGED, newState);
+				// TODO state send to server
+			} catch (e) {
+				process.exit(0);
+			}
+		}
+		this.lastState = newState;
+		this.oldGameState = state;
+	}
+
+	fetchStateFromServer() {
+		//this.lastState = newState;
+		//this.oldGameState = state;
+		// TODO this
+	}
+
 	loop(): string | null {
 		try {
 			this.checkProcessOpen();
 		} catch (e) {
 			return e;
 		}
-		if (
-			this.PlayerStruct &&
-			this.offsets &&
-			this.amongUs !== null &&
-			this.gameAssembly !== null
+
+		if ( // TODO update this criterea based on how we know if the player is going local
+			!this.PlayerStruct ||
+			!this.offsets ||
+			this.amongUs === null ||
+			this.gameAssembly === null
 		) {
-			let state = GameState.UNKNOWN;
-			const meetingHud = this.readMemory<number>(
-				'pointer',
-				this.gameAssembly.modBaseAddr,
-				this.offsets.meetingHud
-			);
-			const meetingHud_cachePtr =
-				meetingHud === 0
-					? 0
-					: this.readMemory<number>(
-							'pointer',
-							meetingHud,
-							this.offsets.meetingHudCachePtr
-					  );
-			const meetingHudState =
-				meetingHud_cachePtr === 0
-					? 4
-					: this.readMemory('int', meetingHud, this.offsets.meetingHudState, 4);
-			const gameState = this.readMemory<number>(
-				'int',
-				this.gameAssembly.modBaseAddr,
-				this.offsets.gameState
-			);
-
-			switch (gameState) {
-				case 0:
-					state = GameState.MENU;
-					this.exileCausesEnd = false;
-					break;
-				case 1:
-				case 3:
-					state = GameState.LOBBY;
-					this.exileCausesEnd = false;
-					break;
-				default:
-					if (this.exileCausesEnd) state = GameState.LOBBY;
-					else if (meetingHudState < 4) state = GameState.DISCUSSION;
-					else state = GameState.TASKS;
-					break;
-			}
-
-			this.gameCode =
-				state === GameState.MENU
-					? ''
-					: this.IntToGameCode(
-							this.readMemory<number>(
-								'int32',
-								this.gameAssembly.modBaseAddr,
-								this.offsets.gameCode
-							)
-					  );
-
-			const hostId = this.readMemory<number>(
-				'uint32',
-				this.gameAssembly.modBaseAddr,
-				this.offsets.hostId
-			);
-			const clientId = this.readMemory<number>(
-				'uint32',
-				this.gameAssembly.modBaseAddr,
-				this.offsets.clientId
-			);
-
-			const allPlayersPtr = this.readMemory<number>(
-				'ptr',
-				this.gameAssembly.modBaseAddr,
-				this.offsets.allPlayersPtr
-			);
-			const allPlayers = this.readMemory<number>(
-				'ptr',
-				allPlayersPtr,
-				this.offsets.allPlayers
-			);
-			const playerCount = this.readMemory<number>(
-				'int' as const,
-				allPlayersPtr,
-				this.offsets.playerCount
-			);
-			let playerAddrPtr = allPlayers + this.offsets.playerAddrPtr;
-			const players = [];
-
-			const exiledPlayerId = this.readMemory<number>(
-				'byte',
-				this.gameAssembly.modBaseAddr,
-				this.offsets.exiledPlayerId
-			);
-			let impostors = 0,
-				crewmates = 0;
-
-			let commsSabotaged = false;
-
-			if (this.gameCode) {
-				for (let i = 0; i < Math.min(playerCount, 100); i++) {
-					const { address, last } = this.offsetAddress(
-						playerAddrPtr,
-						this.offsets.player.offsets
-					);
-					const playerData = readBuffer(
-						this.amongUs.handle,
-						address + last,
-						this.offsets.player.bufferLength
-					);
-
-					const player = this.parsePlayer(address + last, playerData, clientId);
-					playerAddrPtr += this.is64Bit ? 8 : 4;
-					if (!player) continue;
-					players.push(player);
-
-					if (
-						player.name === '' ||
-						player.id === exiledPlayerId ||
-						player.isDead ||
-						player.disconnected
-					)
-						continue;
-
-					if (player.isImpostor) impostors++;
-					else crewmates++;
-				}
-
-				const shipPtr = this.readMemory<number>(
-					'ptr',
-					this.gameAssembly.modBaseAddr,
-					this.offsets.shipStatus
-				);
-
-				const systemsPtr = this.readMemory<number>(
-					'ptr',
-					shipPtr,
-					this.offsets.shipStatusSystems
-				);
-				const map: MapType = this.readMemory<number>(
-					'int32',
-					shipPtr,
-					this.offsets.shipStatusMap,
-					MapType.UNKNOWN
-				);
-
-				if (
-					systemsPtr !== 0 &&
-					(state === GameState.TASKS || state === GameState.DISCUSSION)
-				) {
-					const entries = this.readMemory<number>(
-						'ptr',
-						systemsPtr + (this.is64Bit ? 0x18 : 0xc)
-					);
-					const len = this.readMemory<number>(
-						'uint32',
-						entries + (this.is64Bit ? 0x18 : 0xc)
-					);
-
-					for (let i = 0; i < Math.min(len, 32); i++) {
-						const keyPtr =
-							entries +
-							((this.is64Bit ? 0x20 : 0x10) + i * (this.is64Bit ? 0x18 : 0x10));
-						const valPtr = keyPtr + (this.is64Bit ? 0x10 : 0xc);
-						const key = this.readMemory<number>('int32', keyPtr);
-						if (key === 14) {
-							const value = this.readMemory<number>('ptr', valPtr);
-							switch (map) {
-								case MapType.POLUS:
-								case MapType.THE_SKELD: {
-									commsSabotaged =
-										this.readMemory<number>(
-											'uint32',
-											value,
-											this.offsets.commsSabotaged
-										) === 1;
-									break;
-								}
-								case MapType.MIRA_HQ: {
-									commsSabotaged =
-										this.readMemory<number>(
-											'uint32',
-											value,
-											this.offsets.miraCompletedCommsConsoles
-										) < 2;
-								}
-							}
-						}
-					}
-				}
-			}
-
-			if (
-				this.oldGameState === GameState.DISCUSSION &&
-				state === GameState.TASKS
-			) {
-				if (impostors === 0 || impostors >= crewmates) {
-					this.exileCausesEnd = true;
-					state = GameState.LOBBY;
-				}
-			}
-			if (
-				this.oldGameState === GameState.MENU &&
-				state === GameState.LOBBY &&
-				this.menuUpdateTimer > 0 &&
-				(this.lastPlayerPtr === allPlayers ||
-					players.length === 1 ||
-					!players.find((p) => p.isLocal))
-			) {
-				state = GameState.MENU;
-				this.menuUpdateTimer--;
-			} else {
-				this.menuUpdateTimer = 20;
-			}
-			this.lastPlayerPtr = allPlayers;
-
-			const newState: AmongUsState = {
-				lobbyCode: this.gameCode || 'MENU',
-				players,
-				gameState: state,
-				oldGameState: this.oldGameState,
-				isHost: (hostId && clientId && hostId === clientId) as boolean,
-				hostId: hostId,
-				clientId: clientId,
-				commsSabotaged,
-			};
-			const stateHasChanged = !equal(this.lastState, newState);
-			if (stateHasChanged) {
-				try {
-					this.sendIPC(IpcRendererMessages.NOTIFY_GAME_STATE_CHANGED, newState);
-				} catch (e) {
-					process.exit(0);
-				}
-			}
-			this.lastState = newState;
-			this.oldGameState = state;
+			this.fetchStateFromServer();
+			return null;
+		} else {
+			this.readStateFromMemory();
 		}
+		
 		return null;
 	}
 
