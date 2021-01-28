@@ -2,7 +2,7 @@
 
 <br />
 <p align="center">
-  <a href="https://github.com/ottomated/CrewLink">
+  <a href="https://github.com/impostietalkie/CrewLink">
     <img src="logo.png" alt="Logo" width="80" height="80">
   </a>
 
@@ -11,16 +11,13 @@
   <p align="center">
     Free, open, Among Us proximity voice chat.
     <br />
-    <a href="https://github.com/ottomated/CrewLink/issues">Report Bug</a>
+    <a href="https://github.com/impostietalkie/CrewLink/issues">Report Bug</a>
     ·
-    <a href="https://github.com/ottomated/CrewLink/issues">Request Feature</a>
+    <a href="https://github.com/impostietalkie/CrewLink/issues">Request Feature</a>
     ·
     <a href="#installation"><b>INSTALLATION INSTRUCTIONS</b></a>
   </p>
   <p align="center">
-  <b><a href="https://paypal.me/ottomated">DONATE TO THE PROJECT</a></b>
-  (all donations will be used for server costs or paying for college)
-  </p>
 </p>
 
 
@@ -44,9 +41,9 @@ This project implements proximity voice chat in Among Us. Everyone in an Among U
 
 ## Installation
 
-Download the latest version from [releases](https://github.com/ottomated/CrewLink/releases) and run the `CrewLink-Setup-X.X.X.exe` file. You may get antivirus warnings, because this program hooks into the Among Us process to read game data.
+Download the latest version from [releases](https://github.com/impostietalkie/CrewLink/releases) and run the `CrewLink-Setup-X.X.X.exe` file. You may get antivirus warnings, because this program hooks into the Among Us process to read game data.
 
-If you can, you should use a private server by deploying [this repository](https://github.com/ottomated/CrewLink-server).
+If you can, you should use a private server by deploying [this repository](https://github.com/impostietalkie/CrewLink-server).
 
 ### Setup Instructions (click)
 
@@ -54,9 +51,9 @@ If you can, you should use a private server by deploying [this repository](https
 
 ## Development
 
-You only need to follow the below instructions if you are trying to modify this software. Otherwise, please download the latest version from the [github releases](https://github.com/ottomated/CrewLink/releases).
+You only need to follow the below instructions if you are trying to modify this software. Otherwise, please download the latest version from the [github releases](https://github.com/impostietalkie/CrewLink/releases).
 
-Server code is located at [ottomated/CrewLink-server](https://github.com/ottomated/CrewLink-server). Please use a local server for development purposes.
+Server code is located at [ottomated/CrewLink-server](https://github.com/impostietalkie/CrewLink-server). Please use a local server for development purposes.
 
 ### Prerequisites
 
@@ -72,7 +69,7 @@ npm install yarn -g
 
 1. Clone the repo
 ```sh
-git clone https://github.com/ottomated/CrewLink.git
+git clone https://github.com/impostietalkie/CrewLink.git
 cd CrewLink
 ```
 2. Install NPM packages
@@ -101,7 +98,5 @@ Any contributions you make are greatly appreciated.
 Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
 
 
-[license-shield]: https://img.shields.io/github/license/ottomated/CrewLink.svg?style=flat-square
-[license-url]: https://github.com/ottomated/CrewLink-server/blob/master/LICENSE
-[appveyor-shield]: https://img.shields.io/appveyor/build/ottomated/crewlink
-[appveyor-url]: https://ci.appveyor.com/project/ottomated/crewlink
+[license-shield]: https://img.shields.io/github/license/impostietalkie/CrewLink.svg?style=flat-square
+[license-url]: https://github.com/impostietalkie/CrewLink-server/blob/master/LICENSE
