@@ -91,7 +91,7 @@ const TitleBar: React.FC<TitleBarProps> = function ({
 	const classes = useStyles();
 	return (
 		<div className={classes.root}>
-			<span className={classes.title}>CrewLink{appVersion}</span>
+			<span className={classes.title}>ImpostieTalkie{appVersion}</span>
 			<IconButton
 				className={classes.button}
 				style={{ left: 0 }}

@@ -1,5 +1,5 @@
-appId: net.ottomated.crewlink
-productName: CrewLink
+appId: net.impostietalkie.crewlink
+productName: ImpostieTalkie
 copyright: Copyright © 2020 Ottomated
 directories:
   output: dist
