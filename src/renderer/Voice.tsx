@@ -145,6 +145,8 @@ const POLUS_WALLS: Wall[] = [
 	},
 ];
 
+const emptyWalls: Wall[] = [];
+
 function ccw(A: Point, B: Point, C: Point) {
 	return (C.y-A.y) * (B.x-A.x) > (B.y-A.y) * (C.x-A.x)
 }
@@ -171,7 +173,7 @@ function calculateVoiceAudio(
 
 	const hardWalls = {
 		0: {
-			walls: [],
+			walls: emptyWalls,
 		},
 		1: {
 			walls: MIRA_HQ_WALLS,
@@ -180,7 +182,7 @@ function calculateVoiceAudio(
 			walls: POLUS_WALLS,
 		},
 		3: {
-			walls: [],
+			walls: emptyWalls,
 		},
 	};
 
@@ -269,7 +271,7 @@ function calculateVoiceAudio(
 	const wallIntersection = mapWalls.walls.find((wall) => {
 		intersect(wall, me, other);
 	});
-	if(!!wallIntersection) {
+	if(wallIntersection) {
 		gain.gain.value = 0;
 	}
 
