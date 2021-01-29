@@ -646,6 +646,9 @@ const Voice: React.FC<VoiceProps> = function ({
 				socket.on('setClients', (clients: SocketClientMap) => {
 					setSocketClients(clients);
 				});
+				socket.on('pullstate', (state: string) => {
+					console.log("got state: ", state);
+				});
 			},
 			(error) => {
 				console.error(error);
