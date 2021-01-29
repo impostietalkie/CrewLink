@@ -183,6 +183,7 @@ export default class GameReader {
 
 		let commsSabotaged = false;
 
+		let map: MapType = MapType.UNKNOWN;
 		if (this.gameCode) {
 			for (let i = 0; i < Math.min(playerCount, 100); i++) {
 				const { address, last } = this.offsetAddress(
@@ -223,7 +224,7 @@ export default class GameReader {
 				shipPtr,
 				this.offsets.shipStatusSystems
 			);
-			const map: MapType = this.readMemory<number>(
+			map = this.readMemory<number>(
 				'int32',
 				shipPtr,
 				this.offsets.shipStatusMap,
@@ -309,6 +310,7 @@ export default class GameReader {
 			hostId: hostId,
 			clientId: clientId,
 			commsSabotaged,
+			map: map,
 		};
 		const stateHasChanged = !equal(this.lastState, newState);
 		if (stateHasChanged) {
