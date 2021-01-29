@@ -781,12 +781,12 @@ const Voice: React.FC<VoiceProps> = function ({
 	useEffect(() => {
 	  const interval = setInterval(() => {
 	    if (
-				connect?.connect &&
 				gameState.lobbyCode &&
 				myPlayer?.id !== undefined &&
 				(gameState.gameState === GameState.LOBBY ||
-				  gameState.oldGameState === GameState.DISCUSSION ||
-					gameState.oldGameState === GameState.TASKS)
+				  gameState.gameState === GameState.DISCUSSION ||
+					gameState.gameState === GameState.TASKS) &&
+				connectionStuff.current.socket
 			) {
 				connectionStuff.current.socket.emit(
 					'pushstate',
