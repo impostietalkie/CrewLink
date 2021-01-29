@@ -779,24 +779,21 @@ const Voice: React.FC<VoiceProps> = function ({
 
   // Send state when in game
 	useEffect(() => {
-	  const interval = setInterval(() => {
 	    if (
-				gameState.lobbyCode &&
-				myPlayer?.id !== undefined &&
-				(gameState.gameState === GameState.LOBBY ||
-				  gameState.gameState === GameState.DISCUSSION ||
-					gameState.gameState === GameState.TASKS) &&
-				connectionStuff.current.socket
-			) {
-				connectionStuff.current.socket.emit(
-					'pushstate',
-					myPlayer.id,
-					JSON.stringify(gameState)
-				);
-			}
-	  }, 1000);
-	  return () => clearInterval(interval);
-	}, [gameState.gameState]);
+			gameState.lobbyCode &&
+			myPlayer?.id !== undefined &&
+			(gameState.gameState === GameState.LOBBY ||
+				gameState.gameState === GameState.DISCUSSION ||
+				gameState.gameState === GameState.TASKS) &&
+			connectionStuff.current.socket
+		) {
+			connectionStuff.current.socket.emit(
+				'pushstate',
+				myPlayer.id,
+				JSON.stringify(gameState)
+			);
+		}
+	}, [gameState]);
 
 	// Pass voice state to overlay
 	useEffect(() => {
