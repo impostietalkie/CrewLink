@@ -190,7 +190,7 @@ const App: React.FC = function () {
 		microphone: 'Default',
 		speaker: 'Default',
 		pushToTalk: false,
-		serverURL: 'https://crewl.ink',
+		serverURL: 'http://impostietalkie.herokuapp.com/',
 		pushToTalkShortcut: 'V',
 		deafenShortcut: 'RControl',
 		muteShortcut: 'RAlt',

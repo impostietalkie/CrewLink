@@ -153,7 +153,7 @@ const storeConfig: Store.Options<ISettings> = {
 		'1.1.5': (store) => {
 			const serverURL = store.get('serverURL');
 			if (serverURL === 'http://54.193.94.35:9736') {
-				store.set('serverURL', 'https://crewl.ink');
+				store.set('serverURL', 'http://impostietalkie.herokuapp.com/');
 			}
 		},
 		'1.1.6': (store) => {
@@ -165,8 +165,8 @@ const storeConfig: Store.Options<ISettings> = {
 			store.delete('stereoInLobby');
 		},
 		'1.2.0': (store) => {
-			if (store.get('serverURL') !== 'https://crewl.ink') {
-				store.set('serverURL', 'https://crewl.ink');
+			if (store.get('serverURL') !== 'http://impostietalkie.herokuapp.com/') {
+				store.set('serverURL', 'http://impostietalkie.herokuapp.com/');
 			}
 			// @ts-ignore
 			store.delete('offsets');
@@ -191,7 +191,7 @@ const storeConfig: Store.Options<ISettings> = {
 		},
 		serverURL: {
 			type: 'string',
-			default: 'https://crewl.ink',
+			default: 'http://impostietalkie.herokuapp.com/',
 			format: 'uri',
 		},
 		pushToTalkShortcut: {
@@ -377,7 +377,7 @@ const URLInput: React.FC<URLInputProps> = function ({
 						onClick={() => {
 							setOpen(false);
 							setURLValid(true);
-							onValidURL('https://crewl.ink');
+							onValidURL('http://impostietalkie.herokuapp.com/');
 						}}
 					>
 						Reset to default
