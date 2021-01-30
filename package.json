@@ -8,7 +8,7 @@
     "url": "https://github.com/impostietalkie/crewlink.git"
   },
   "author": {
-    "name": "impostietalkie",
+    "name": "impostietalkie"
   },
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
