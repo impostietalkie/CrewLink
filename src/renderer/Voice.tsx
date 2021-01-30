@@ -787,7 +787,7 @@ const Voice: React.FC<VoiceProps> = function ({
 
 	useEffect(() => {
 		if (myPlayer?.name) {
-			axios.put(`${settings.serverURL}selectedPlayer?roomCode=${gameState.lobbyCode}&playerName=${myPlayer.name}`); // TODO fix this up
+			axios.put(`${settings.serverURL}/selectedPlayer?roomCode=${gameState.lobbyCode}&playerName=${myPlayer.name}`); // TODO fix this up
 		}
 	}, [myPlayer?.name]);
 
