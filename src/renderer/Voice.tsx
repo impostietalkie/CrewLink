@@ -255,7 +255,7 @@ function calculateVoiceAudio(
 		muffle.Q.value = 20;
 		if (gain.gain.value === 1) gain.gain.value = 0.7; // Too loud at 1
 	} else {
-		muffle.frequency.value = 20000;
+		muffle.frequency.value = 8000;
 		muffle.Q.value = 0;
 	}
 
@@ -526,6 +526,8 @@ const Voice: React.FC<VoiceProps> = function ({
 			autoGainControl: false,
 			googAutoGainControl: false,
 			googAutoGainControl2: false,
+			echoCancellation: true,
+			noiseSuppression: false,
 		};
 
 		// Get microphone settings
