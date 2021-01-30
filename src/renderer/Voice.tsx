@@ -32,6 +32,7 @@ import SupportLink from './SupportLink';
 import Divider from '@material-ui/core/Divider';
 // @ts-ignore
 import reverbOgx from 'arraybuffer-loader!../../static/reverb.ogx';
+import axios from 'axios';
 
 export interface ExtendedAudioElement extends HTMLAudioElement {
 	setSinkId: (sinkId: string) => Promise<void>;
@@ -255,7 +256,7 @@ function calculateVoiceAudio(
 		muffle.Q.value = 20;
 		if (gain.gain.value === 1) gain.gain.value = 0.7; // Too loud at 1
 	} else {
-		muffle.frequency.value = 8000;
+		muffle.frequency.value = 20000;
 		muffle.Q.value = 0;
 	}
 
@@ -783,6 +784,12 @@ const Voice: React.FC<VoiceProps> = function ({
 			return gameState.players.find((p) => p.isLocal);
 		}
 	}, [gameState.players]);
+
+	useEffect(() => {
+		if (myPlayer?.name) {
+			axios.put(`${settings.serverURL}selectedPlayer?roomCode=${gameState.lobbyCode}&playerName=${myPlayer.name}`); // TODO fix this up
+		}
+	}, [myPlayer?.name]);
 
 	const otherPlayers = useMemo(() => {
 		let otherPlayers: Player[];
