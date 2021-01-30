@@ -269,7 +269,7 @@ function calculateVoiceAudio(
 	// Mute players if there is a hard wall between them
 	const mapWalls = hardWalls[state.map];
 	const wallIntersection = mapWalls.walls.find((wall) => {
-		intersect(wall, me, other);
+		return intersect(wall, me, other);
 	});
 	if(wallIntersection) {
 		gain.gain.value = 0;
